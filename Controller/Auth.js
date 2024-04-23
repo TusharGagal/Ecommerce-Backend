@@ -1,33 +1,54 @@
 const { User } = require("../Models/User");
+const crypto = require("crypto");
+const { sanitizeUser } = require("../Services/Common");
+var jwt = require("jsonwebtoken");
+const SECRET_KEY = "SECRET_KEY";
 
 exports.createUser = async (req, res) => {
-  const user = new User(req.body);
   try {
-    const doc = await user.save();
-    res.status(200).json(doc);
+    const salt = crypto.randomBytes(16);
+    crypto.pbkdf2(
+      req.body.password,
+      salt,
+      310000,
+      32,
+      "sha256",
+      async function (err, hashedPassword) {
+        const user = new User({
+          ...req.body,
+          password: hashedPassword,
+          salt: salt,
+        });
+        const doc = await user.save();
+        req.login(sanitizeUser(doc), (err) => {
+          if (err) {
+            res.status(400).json(err);
+          } else {
+            const token = jwt.sign(sanitizeUser(doc), SECRET_KEY);
+            res
+              .cookie("jwt", token, {
+                expires: new Date(Date.now() + 3600000),
+                httpOnly: true,
+              })
+              .status(200)
+              .json(token);
+          }
+        });
+      }
+    );
   } catch (err) {
     res.status(400).json(err);
   }
 };
 exports.loginUser = async (req, res) => {
-  try {
-    const user = await User.findOne({ email: req.body.email }).exec();
-    //this is temporary we will use strong password auth.
-    if (!user) {
-      res.status(401).json({ message: "Invalid Credentials" });
-    } else if (user.password === req.body.password) {
-      res
-        .status(200)
-        .json({
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          addresses: user.addresses,
-        });
-    } else {
-      res.status(401).json({ message: "Invalid Credentials" });
-    }
-  } catch (err) {
-    res.status(400).json(err);
-  }
+  res
+    .cookie("jwt", req.user.token, {
+      expires: new Date(Date.now() + 3600000),
+      httpOnly: true,
+    })
+    .status(200)
+    .json(req.user.token);
+};
+exports.checkUser = async (req, res) => {
+  res.json({ status: "success", user: req.user });
 };
