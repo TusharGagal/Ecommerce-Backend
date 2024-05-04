@@ -18,7 +18,7 @@ exports.fetchAllProducts = async (req, res) => {
   //TODO: we have to try the multiple catergories,brand in filter
   let condition = {};
 
-  if (!req.query.admin) {
+  if (req.user.role != "admin") {
     condition.deleted = { $ne: true };
   }
   let query = Product.find(condition);
