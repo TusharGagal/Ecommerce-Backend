@@ -78,7 +78,7 @@ passport.use(
             done(null, false, { message: "Invalid Credentials" });
           } else {
             const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
-            done(null, { id: user.id, role: user.role });
+            done(null, { token });
           }
         }
       );
