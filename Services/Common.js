@@ -17,10 +17,6 @@ exports.cookieExtractor = function (req) {
   if (req && req.cookies) {
     token = req.cookies["jwt"];
   }
-  token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2MWNlZjAwNmNmNzAyZGY1MWZkMzM0OSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTcxNjcwNzA5MH0.QN5-z-8rWFxR4kUpUpUyFKrcCTCzCue8Fqal_TFn9CU";
-  // token =
-  //   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2NDFmZjVlMzVhZjE0N2Q0OTM4MWJiZCIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzE2NzA4Mzc2fQ.cdDY4A_CXEDESi7rLgKassMIeemkr2lEMJKpchbbPcE";
   return token;
 };
 exports.isAuth = (req, res, done) => {
