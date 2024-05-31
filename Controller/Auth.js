@@ -1,6 +1,6 @@
 const { User } = require("../Models/User");
 const crypto = require("crypto");
-const { sanitizeUser } = require("../Services/Common");
+const { sanitizeUser, sendMail } = require("../Services/Common");
 var jwt = require("jsonwebtoken");
 const SECRET_KEY = "SECRET_KEY";
 
@@ -31,7 +31,7 @@ exports.createUser = async (req, res) => {
                 httpOnly: true,
               })
               .status(200)
-              .json(token);
+              .json({ id: doc.id, role: doc.role });
           }
         });
       }
@@ -41,14 +41,81 @@ exports.createUser = async (req, res) => {
   }
 };
 exports.loginUser = async (req, res) => {
+  const user = req.user;
   res
-    .cookie("jwt", req.user.token, {
+    .cookie("jwt", user.token, {
       expires: new Date(Date.now() + 3600000),
       httpOnly: true,
     })
-    .status(200)
-    .json(req.user.token);
+    .status(201)
+    .json({ id: user.id, role: user.role });
+};
+exports.logout = async (req, res) => {
+  res
+    .cookie("jwt", null, {
+      expires: new Date(Date.now()),
+      httpOnly: true,
+    })
+    .sendStatus(200);
 };
 exports.checkAuth = async (req, res) => {
-  res.json({ status: "success", user: req.user });
+  if (req.user) {
+    res.json(req.user);
+  } else {
+    res.sendStatus(401);
+  }
+};
+exports.resetPasswordRequest = async (req, res) => {
+  const email = req.body.email;
+  const user = await User.findOne({ email: email });
+  if (user) {
+    const token = crypto.randomBytes(48).toString("hex");
+    user.resetPasswordToken = token;
+    await user.save();
+    const resetPageLink =
+      "http://localhost:3000/reset-password?token=" + token + "&email=" + email;
+    const subject = "Reset password request for CartEase Account";
+    const html = `<p>Click <a href=${resetPageLink}>here</a> to reset your password</p>`;
+    if (email) {
+      const response = await sendMail({ to: email, subject, html });
+      res.json(response);
+    } else {
+      res.sendStatus(401);
+    }
+  } else {
+    res.sendStatus(401);
+  }
+};
+exports.resetPassword = async (req, res) => {
+  const { email, password, token } = req.body;
+  const user = await User.findOne({ email: email, resetPasswordToken: token });
+  if (user) {
+    try {
+      const salt = crypto.randomBytes(16);
+      crypto.pbkdf2(
+        req.body.password,
+        salt,
+        310000,
+        32,
+        "sha256",
+        async function (err, hashedPassword) {
+          user.password = hashedPassword;
+          user.salt = salt;
+          await user.save();
+          const subject = "Password Successfully reset for CartEase Account";
+          const html = `<p>You have successfully reset your password.</p>`;
+          if (email) {
+            const response = await sendMail({ to: email, subject, html });
+            res.json(response);
+          } else {
+            res.sendStatus(401);
+          }
+        }
+      );
+    } catch (err) {
+      res.status(400).json(err);
+    }
+  } else {
+    res.sendStatus(401);
+  }
 };

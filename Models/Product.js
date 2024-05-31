@@ -25,6 +25,10 @@ const productSchema = new Schema({
   category: { type: String, required: true },
   thumbnail: { type: String, required: true },
   images: { type: [String], required: true },
+  colors: { type: [Schema.Types.Mixed] },
+  sizes: { type: [Schema.Types.Mixed] },
+  highlights: { type: [String] },
+  discountedPrice: { type: Number },
   deleted: { type: Boolean, default: false },
 });
 
@@ -32,6 +36,11 @@ const virtual = productSchema.virtual("id");
 virtual.get(function () {
   return this._id;
 });
+//we cant sort using the virtual field.
+// const virtualDiscountPrice = productSchema.virtual("discountedPrice");
+// virtualDiscountPrice.get(function () {
+//   return Math.round(this.price * (1 - this.discountPercentage / 100) * 83);
+// });
 productSchema.set("toJSON", {
   virtuals: true,
   versionKey: false,

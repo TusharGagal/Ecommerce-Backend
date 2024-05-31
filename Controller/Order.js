@@ -1,10 +1,24 @@
 const { Order } = require("../Models/Order");
+const { Product } = require("../Models/Product");
+const { User } = require("../Models/User");
+const { sendMail, invoiceTemplate } = require("../Services/Common");
 
 exports.createOrder = async (req, res) => {
   const order = new Order(req.body);
+  for (let item of order.products) {
+    const product = await Product.findOne({ _id: item.product.id });
+    product.$inc("stock", -1 * item.quantity);
+    await product.save();
+  }
   try {
     const doc = await order.save();
-    // const result = await doc.populate("product");
+    const user = await User.findById(order.user);
+    //we can use this with await also.
+    sendMail({
+      to: user.email,
+      html: invoiceTemplate(order),
+      subject: `Thanks for your Order #${order.id} `,
+    });
     res.status(200).json(doc);
   } catch (err) {
     res.status(400).json(err);
@@ -49,8 +63,6 @@ exports.fetchAllOrders = async (req, res) => {
 
   let query = Order.find({});
   let totalOrdersQuery = Order.find({});
-
-  //TODO: get sorting from discounted price not on actual price
 
   if (req.query._sort && req.query._order) {
     query = query.sort({ [req.query._sort]: req.query._order });

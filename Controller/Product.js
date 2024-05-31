@@ -3,6 +3,9 @@ const { Product } = require("../Models/Product");
 exports.createProduct = async (req, res) => {
   //this product we have to get from API body.
   const product = new Product(req.body);
+  product.discountedPrice = Math.round(
+    product.price * (1 - product.discountPercentage / 100) * 83
+  );
   try {
     const doc = await product.save();
     res.status(201).json(doc);
@@ -15,7 +18,6 @@ exports.fetchAllProducts = async (req, res) => {
   // filter={"category":"[smartphone","laptops"]}
   //sort={_sort:"price",_order:"desc"};
   //Pagination={_page:1,_limit=10}
-  //TODO: we have to try the multiple catergories,brand in filter
   let condition = {};
 
   if (req.user.role != "admin") {
@@ -24,17 +26,20 @@ exports.fetchAllProducts = async (req, res) => {
   let query = Product.find(condition);
   let totalProductsQuery = Product.find(condition);
 
+  console.log(req.query.category);
+
   if (req.query.category) {
-    query = query.find({ category: req.query.category });
+    query = query.find({ category: { $in: req.query.category.split(",") } });
     totalProductsQuery = totalProductsQuery.find({
-      category: req.query.category,
+      category: { $in: req.query.category.split(",") },
     });
   }
   if (req.query.brand) {
-    query = query.find({ brand: req.query.brand });
-    totalProductsQuery = totalProductsQuery.find({ brand: req.query.brand });
+    query = query.find({ brand: { $in: req.query.brand.split(",") } });
+    totalProductsQuery = totalProductsQuery.find({
+      brand: { $in: req.query.brand.split(",") },
+    });
   }
-  //TODO: get sorting from discounted price not on actual price
 
   if (req.query._sort && req.query._order) {
     query = query.sort({ [req.query._sort]: req.query._order });
@@ -76,7 +81,11 @@ exports.updateProduct = async (req, res) => {
     const product = await Product.findByIdAndUpdate(id, req.body, {
       new: true,
     });
-    res.status(201).json(product);
+    product.discountedPrice = Math.round(
+      product.price * (1 - product.discountPercentage / 100) * 83
+    );
+    const updatedProduct = await product.save();
+    res.status(201).json(updatedProduct);
   } catch (err) {
     res.status(400).json(err);
   }
