@@ -73,7 +73,10 @@ exports.resetPasswordRequest = async (req, res) => {
     user.resetPasswordToken = token;
     await user.save();
     const resetPageLink =
-      "http://localhost:3000/reset-password?token=" + token + "&email=" + email;
+      "http://https://cartease-tushargagals-projects.vercel.app/reset-password?token=" +
+      token +
+      "&email=" +
+      email;
     const subject = "Reset password request for CartEase Account";
     const html = `<p>Click <a href=${resetPageLink}>here</a> to reset your password</p>`;
     if (email) {
