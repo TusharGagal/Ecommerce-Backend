@@ -73,7 +73,7 @@ exports.resetPasswordRequest = async (req, res) => {
     user.resetPasswordToken = token;
     await user.save();
     const resetPageLink =
-      "http://https://cartease-tushargagals-projects.vercel.app/reset-password?token=" +
+      "http://cartease-tushargagals-projects.vercel.app/reset-password?token=" +
       token +
       "&email=" +
       email;
