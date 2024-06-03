@@ -363,7 +363,6 @@ exports.invoiceTemplate = function (order) {
             <tr>
               <td align="center" bgcolor="#D2C7BA" style="padding: 12px 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 20px; color: #666;">
                 <p style="margin: 0;">To stop receiving these emails, you can <a href="https://sendgrid.com" target="_blank">unsubscribe</a> at any time.</p>
-                <p style="margin: 0;">Paste 1234 S. Broadway St. City, State 12345</p>
               </td>
             </tr>
             <!-- end unsubscribe -->
